@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sanjeevani — Fatty Liver Risk Assessment</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a6b3c, #2d9e5f);
+      color: white;
+      padding: 24px 32px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.8rem; letter-spacing: 0.5px; }
+    header p  { font-size: 0.9rem; opacity: 0.85; margin-top: 4px; }
+
+    .container {
+      max-width: 780px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a6b3c;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+
+    label { font-size: 0.82rem; font-weight: 600; color: #4a5568; }
+
+    input[type="number"], select {
+      padding: 9px 12px;
+      border: 1.5px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #1a6b3c;
+    }
+
+    .toggle-group {
+      display: flex;
+      gap: 8px;
+    }
+    .toggle-group button {
+      flex: 1;
+      padding: 9px;
+      border: 1.5px solid #cbd5e0;
+      border-radius: 8px;
+      background: white;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+    .toggle-group button.active {
+      background: #1a6b3c;
+      color: white;
+      border-color: #1a6b3c;
+    }
+
+    .hint { font-size: 0.75rem; color: #718096; }
+
+    #submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #1a6b3c, #2d9e5f);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+    #submit-btn:hover { opacity: 0.9; }
+    #submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── Results ── */
+    #results { display: none; }
+
+    .risk-banner {
+      border-radius: 10px;
+      padding: 20px 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .risk-banner.low      { background: #f0fff4; border: 2px solid #38a169; }
+    .risk-banner.moderate { background: #fffbeb; border: 2px solid #d69e2e; }
+    .risk-banner.high     { background: #fff5f5; border: 2px solid #e53e3e; }
+
+    .risk-banner .label {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .risk-banner.low      .label { color: #276749; }
+    .risk-banner.moderate .label { color: #975a16; }
+    .risk-banner.high     .label { color: #c53030; }
+
+    .risk-banner .score { font-size: 0.9rem; color: #718096; margin-top: 4px; }
+    .risk-banner .bmi-line { font-size: 0.88rem; margin-top: 6px; color: #4a5568; }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .factors { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .factor-tag {
+      background: #ebf8ff;
+      color: #2b6cb0;
+      border: 1px solid #bee3f8;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .remedy-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .remedy-list li {
+      background: #f7fafc;
+      border-left: 4px solid #1a6b3c;
+      padding: 10px 14px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .next-steps-box {
+      background: #fff8f0;
+      border: 1.5px solid #f6ad55;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    #reset-btn {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #1a6b3c;
+      border: 2px solid #1a6b3c;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: all 0.15s;
+    }
+    #reset-btn:hover { background: #f0fff4; }
+
+    .error-msg {
+      background: #fff5f5;
+      border: 1.5px solid #fc8181;
+      color: #c53030;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      display: none;
+      margin-bottom: 16px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Sanjeevani</h1>
+  <p>AI-Assisted Fatty Liver Risk Assessment &nbsp;·&nbsp; Based on WHO Guidelines</p>
+</header>
+
+<div class="container">
+
+  <!-- ── Form ── -->
+  <div id="form-section">
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- Demographics -->
+    <div class="card">
+      <h2>Personal Details</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="age">Age (years)</label>
+          <input type="number" id="age" min="18" max="100" placeholder="e.g. 35" />
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="gender">
+            <option value="">Select...</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="height">Height (cm)</label>
+          <input type="number" id="height" min="100" max="250" placeholder="e.g. 170" />
+        </div>
+        <div class="field">
+          <label for="weight">Weight (kg)</label>
+          <input type="number" id="weight" min="30" max="300" placeholder="e.g. 75" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Lifestyle -->
+    <div class="card">
+      <h2>Lifestyle</h2>
+      <div class="grid">
+        <div class="field">
+          <label>Do you smoke?</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle" data-field="is_smoker" data-val="false">No</button>
+            <button type="button" class="toggle" data-field="is_smoker" data-val="true">Yes</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="alcohol">Alcoholic drinks per week</label>
+          <input type="number" id="alcohol" min="0" max="200" placeholder="e.g. 4" />
+          <span class="hint">1 drink = 1 unit (beer, wine, shot)</span>
+        </div>
+        <div class="field">
+          <label for="activity">Physical activity (mins/day)</label>
+          <input type="number" id="activity" min="0" max="1440" placeholder="e.g. 30" />
+          <span class="hint">Walking, gym, sports, etc.</span>
+        </div>
+        <div class="field">
+          <label>Do you regularly eat fried/fatty food?</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle" data-field="eats_fatty" data-val="false">No</button>
+            <button type="button" class="toggle" data-field="eats_fatty" data-val="true">Yes</button>
+          </div>
+        </div>
+        <div class="field full">
+          <label>Do you regularly consume sugary drinks or sweets?</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle" data-field="eats_sugary" data-val="false">No</button>
+            <button type="button" class="toggle" data-field="eats_sugary" data-val="true">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health conditions -->
+    <div class="card">
+      <h2>Health Conditions</h2>
+      <div class="grid">
+        <div class="field">
+          <label>Have you been told you have diabetes or pre-diabetes?</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle" data-field="has_diabetes" data-val="false">No</button>
+            <button type="button" class="toggle" data-field="has_diabetes" data-val="true">Yes</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Does a close family member have liver disease, diabetes, or obesity?</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle" data-field="family_history" data-val="false">No</button>
+            <button type="button" class="toggle" data-field="family_history" data-val="true">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="submit-btn" onclick="submitForm()">Assess My Risk</button>
+  </div>
+
+  <!-- ── Results ── -->
+  <div id="results">
+    <div id="risk-banner" class="risk-banner card">
+      <div class="label" id="risk-label"></div>
+      <div class="score" id="risk-score"></div>
+      <div class="bmi-line" id="bmi-line"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Top Contributing Factors</div>
+      <div class="factors" id="factors"></div>
+
+      <div class="section-title">Recommendations</div>
+      <ul class="remedy-list" id="remedies"></ul>
+
+      <div class="section-title">Clinical Next Steps</div>
+      <div class="next-steps-box" id="next-steps"></div>
+    </div>
+
+    <button id="reset-btn" onclick="resetForm()">Start New Assessment</button>
+  </div>
+
+</div>
+
+<script>
+  // Track toggle values
+  const toggleState = {
+    is_smoker: null, eats_fatty: null,
+    eats_sugary: null, has_diabetes: null, family_history: null,
+  };
+
+  document.querySelectorAll('.toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.field;
+      document.querySelectorAll(`[data-field="${field}"]`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      toggleState[field] = btn.dataset.val === 'true';
+    });
+  });
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function clearError() {
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  function validate() {
+    const age    = parseFloat(document.getElementById('age').value);
+    const gender = document.getElementById('gender').value;
+    const height = parseFloat(document.getElementById('height').value);
+    const weight = parseFloat(document.getElementById('weight').value);
+    const alcohol  = document.getElementById('alcohol').value;
+    const activity = document.getElementById('activity').value;
+
+    if (!age || age < 18 || age > 100)       return 'Please enter a valid age (18–100).';
+    if (!gender)                              return 'Please select your gender.';
+    if (!height || height < 100 || height > 250) return 'Please enter a valid height (100–250 cm).';
+    if (!weight || weight < 30 || weight > 300)  return 'Please enter a valid weight (30–300 kg).';
+    if (alcohol === '' || isNaN(alcohol))     return 'Please enter weekly alcohol units (0 if none).';
+    if (activity === '' || isNaN(activity))   return 'Please enter daily activity minutes (0 if none).';
+
+    for (const [key, val] of Object.entries(toggleState)) {
+      if (val === null) return `Please answer all Yes/No questions.`;
+    }
+    return null;
+  }
+
+  async function submitForm() {
+    clearError();
+    const err = validate();
+    if (err) { showError(err); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Analysing...';
+
+    const payload = {
+      age:                  parseFloat(document.getElementById('age').value),
+      gender:               document.getElementById('gender').value,
+      height_cm:            parseFloat(document.getElementById('height').value),
+      weight_kg:            parseFloat(document.getElementById('weight').value),
+      is_smoker:            toggleState.is_smoker,
+      weekly_alcohol_units: parseInt(document.getElementById('alcohol').value),
+      daily_activity_mins:  parseInt(document.getElementById('activity').value),
+      eats_fatty_food:      toggleState.eats_fatty,
+      eats_sugary_food:     toggleState.eats_sugary,
+      has_diabetes:         toggleState.has_diabetes,
+      family_history:       toggleState.family_history,
+    };
+
+    try {
+      const res = await fetch('/api/v1/assess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Server error. Please try again.');
+      }
+
+      const data = await res.json();
+      renderResults(data);
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Assess My Risk';
+    }
+  }
+
+  function renderResults(data) {
+    const riskClasses = ['low', 'moderate', 'high'];
+    const riskLabels  = ['Low Risk', 'Moderate Risk', 'High Risk'];
+    const riskEmojis  = ['✅', '⚠️', '🚨'];
+
+    const cls = riskClasses[data.risk_level];
+    const banner = document.getElementById('risk-banner');
+    banner.className = `risk-banner card ${cls}`;
+
+    document.getElementById('risk-label').textContent =
+      `${riskEmojis[data.risk_level]} ${riskLabels[data.risk_level]}`;
+    document.getElementById('risk-score').textContent =
+      `Risk Score: ${data.risk_score_percent}%`;
+    document.getElementById('bmi-line').textContent =
+      `BMI: ${data.bmi} — ${data.bmi_category}`;
+
+    // Factors
+    const factorsEl = document.getElementById('factors');
+    factorsEl.innerHTML = data.top_contributing_factors
+      .map(f => `<span class="factor-tag">${f}</span>`).join('');
+
+    // Remedies
+    const remediesEl = document.getElementById('remedies');
+    remediesEl.innerHTML = data.remedies
+      .map(r => `<li>${r}</li>`).join('');
+
+    document.getElementById('next-steps').textContent = data.next_steps;
+
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('form-section').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.querySelectorAll('input[type="number"]').forEach(i => i.value = '');
+    document.getElementById('gender').value = '';
+    document.querySelectorAll('.toggle').forEach(b => b.classList.remove('active'));
+    Object.keys(toggleState).forEach(k => toggleState[k] = null);
+    clearError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
