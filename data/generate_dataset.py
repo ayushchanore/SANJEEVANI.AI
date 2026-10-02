@@ -70,6 +70,6 @@ df = pd.DataFrame({
 out = Path(__file__).parent / "fatty_liver_data.csv"
 df.to_csv(out, index=False)
 
-print(f"Saved {len(df)} records → {out}")
+print(f"Saved {len(df)} records to {out}")
 print(f"Class balance — 0: {(label==0).sum()}  1: {(label==1).sum()}")
 print(f"NaN counts:\n{df.isnull().sum()[df.isnull().sum() > 0]}")

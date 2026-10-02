@@ -20,14 +20,20 @@ def generate_recommendations(
     risk_level: int,
     top_factors: list[str],
     weekly_alcohol: int,
+    eats_fatty_food: bool = False,
+    eats_sugary_food: bool = False,
+    daily_activity_mins: int = 0,
 ) -> dict:
     """
     Generate WHO-aligned lifestyle and clinical recommendations.
 
     Args:
-        risk_level:     0 = Low, 1 = Moderate, 2 = High
-        top_factors:    Top SHAP feature names driving the prediction
-        weekly_alcohol: Patient-reported weekly alcohol units
+        risk_level:          0 = Low, 1 = Moderate, 2 = High
+        top_factors:         Top SHAP feature names driving the prediction
+        weekly_alcohol:      Patient-reported weekly alcohol units
+        eats_fatty_food:     Self-reported regular fatty food consumption
+        eats_sugary_food:    Self-reported regular sugary food/drink consumption
+        daily_activity_mins: Self-reported daily activity in minutes
 
     Returns:
         dict with keys: risk_label, remedies (list), next_steps (str)
@@ -46,11 +52,15 @@ def generate_recommendations(
 
     # ── WHO Dietary Guideline ─────────────────────────────────────────────────
     # Source: WHO Guideline on Sugars Intake for Adults and Children (2015)
-    if factors & (_LAB_FEATURES | _PHYSICAL_FEATURES):
+    if eats_sugary_food or (factors & (_LAB_FEATURES | _PHYSICAL_FEATURES)):
         remedies.append(
-            "Diet (WHO): Reduce free sugar intake to <10% of total daily energy. "
-            "Prioritise whole grains, vegetables, and unsaturated fats. "
-            "Limit ultra-processed foods and refined carbohydrates."
+            "Diet — Sugar (WHO): Reduce free sugar intake to <10% of total daily energy. "
+            "Swap sugary drinks for water and limit sweets and processed snacks."
+        )
+    if eats_fatty_food:
+        remedies.append(
+            "Diet — Fat (WHO): Limit saturated and trans fats. Replace fried and fatty foods "
+            "with grilled, steamed, or baked options. Prioritise vegetables, legumes, and whole grains."
         )
 
     # ── WHO Alcohol Guideline ─────────────────────────────────────────────────
