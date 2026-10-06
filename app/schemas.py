@@ -3,7 +3,7 @@ Pydantic v2 schemas for the fatty liver risk assessment API.
 All required fields are self-reportable — no medical tests needed.
 """
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class PatientInput(BaseModel):
@@ -44,6 +44,27 @@ class PatientInput(BaseModel):
     }}
 
 
+# ── Auth schemas ─────────────────────────────────────────────────────────────
+class RegisterRequest(BaseModel):
+    username:  str = Field(..., min_length=3, max_length=30)
+    email:     EmailStr
+    full_name: str = Field(..., min_length=2, max_length=80)
+    password:  str = Field(..., min_length=6)
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type:   str = "bearer"
+    username:     str
+    full_name:    str
+
+
+# ── Assessment schemas ────────────────────────────────────────────────────────
 class AssessmentResponse(BaseModel):
     risk_level:               int        # 0 | 1 | 2
     risk_score_percent:       float      # model probability × 100, rounded to 1 dp

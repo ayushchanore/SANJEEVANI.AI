@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log In — Sanjeevani</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green: #1a6b3c; --green-light: #2d9e5f; --green-pale: #f0fff4; --border: #e2e8f0; --muted: #718096; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f7fafc; color: #1a202c; min-height: 100vh; display: flex; flex-direction: column; }
+    a { text-decoration: none; color: inherit; }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 64px; background: #fff;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand { font-size: 1.2rem; font-weight: 700; color: var(--green); }
+    .nav-back { font-size: 0.88rem; color: var(--muted); }
+    .nav-back:hover { color: var(--green); }
+
+    main {
+      flex: 1; display: flex; align-items: center;
+      justify-content: center; padding: 40px 16px;
+    }
+    .card {
+      background: #fff; border-radius: 14px; padding: 40px 36px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08); width: 100%; max-width: 420px;
+    }
+    .card-icon { text-align: center; font-size: 2.4rem; margin-bottom: 8px; }
+    .card h1 { text-align: center; font-size: 1.5rem; font-weight: 800; }
+    .card .sub { text-align: center; color: var(--muted); font-size: 0.88rem; margin-top: 6px; margin-bottom: 28px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    label { font-size: 0.82rem; font-weight: 600; color: #4a5568; }
+    input {
+      padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 0.92rem; transition: border-color 0.2s;
+    }
+    input:focus { outline: none; border-color: var(--green); }
+
+    .btn {
+      width: 100%; padding: 13px; margin-top: 8px;
+      background: linear-gradient(135deg, var(--green), var(--green-light));
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .divider { text-align: center; color: var(--muted); font-size: 0.82rem; margin: 20px 0; }
+    .link-row { text-align: center; font-size: 0.88rem; color: var(--muted); }
+    .link-row a { color: var(--green); font-weight: 600; }
+
+    .error-msg {
+      background: #fff5f5; border: 1.5px solid #fc8181; color: #c53030;
+      border-radius: 8px; padding: 10px 14px; font-size: 0.85rem;
+      display: none; margin-bottom: 14px;
+    }
+    .spinner {
+      display: inline-block; width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      text-align: center; padding: 20px;
+      font-size: 0.78rem; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    @media (max-width: 480px) {
+      nav { padding: 0 16px; }
+      .card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-brand">🌿 Sanjeevani</a>
+  <a href="/" class="nav-back">← Back to Home</a>
+</nav>
+
+<main>
+  <div class="card">
+    <div class="card-icon">🔐</div>
+    <h1>Welcome Back</h1>
+    <p class="sub">Log in to access your risk assessment</p>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter your username" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
+    </div>
+
+    <button class="btn" id="login-btn" onclick="doLogin()">Log In</button>
+
+    <div class="divider">— or —</div>
+    <div class="link-row">Don't have an account? <a href="/register">Sign up free</a></div>
+  </div>
+</main>
+
+<footer>&copy; 2024 Sanjeevani · For informational purposes only</footer>
+
+<script>
+  // Redirect if already logged in
+  if (localStorage.getItem('token')) window.location.href = '/assess';
+
+  document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl    = document.getElementById('error-msg');
+    const btn      = document.getElementById('login-btn');
+
+    errEl.style.display = 'none';
+    if (!username || !password) {
+      errEl.textContent = 'Please enter your username and password.';
+      errEl.style.display = 'block'; return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Logging in...';
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Login failed.');
+
+      localStorage.setItem('token',     data.access_token);
+      localStorage.setItem('username',  data.username);
+      localStorage.setItem('full_name', data.full_name);
+      window.location.href = '/assess';
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Log In';
+    }
+  }
+</script>
+</body>
+</html>
