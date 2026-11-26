@@ -129,13 +129,18 @@ def _bmi_category(bmi: float) -> str:
 
 
 def _build_feature_vector(p: PatientInput, feature_names: list[str]) -> np.ndarray:
-    estimated_waist = round(2.15 * p.bmi + 27.8, 1)
     mapping: dict[str, float | None] = {
-        "age": p.age, "bmi": p.bmi, "waist_cm": estimated_waist,
-        "systolic_bp": None, "is_diabetic": float(p.has_diabetes),
-        "is_smoker": float(p.is_smoker), "alt_u_l": None, "ast_u_l": None,
-        "triglycerides": None, "hdl_cholesterol": None,
-        "fasting_glucose": None, "insulin_uiu_ml": None, "ggt_u_l": None,
+        "age": p.age,
+        "systolic_bp": None,
+        "is_diabetic": float(p.has_diabetes),
+        "is_smoker": float(p.is_smoker),
+        "alt_u_l": None, "ast_u_l": None,
+        "hdl_cholesterol": None,
+        "fasting_glucose": None, "insulin_uiu_ml": None,
+        # keep legacy keys in case model was trained with full feature set
+        "bmi": p.bmi,
+        "waist_cm": round(2.15 * p.bmi + 27.8, 1),
+        "triglycerides": None, "ggt_u_l": None,
     }
     return np.array(
         [mapping.get(f) if mapping.get(f) is not None else np.nan for f in feature_names],
@@ -196,6 +201,18 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 @app.get("/health", tags=["Status"])
 def health_check():
     return {"status": "ok", "service": APP_TITLE, "version": APP_VERSION}
+
+
+@app.get("/download/dataset", tags=["Status"])
+def download_dataset():
+    csv_path = Path(__file__).resolve().parents[1] / "data" / "fatty_liver_data.csv"
+    if not csv_path.exists():
+        raise HTTPException(status_code=404, detail="Dataset not found.")
+    return FileResponse(
+        path=csv_path,
+        media_type="text/csv",
+        filename="fatty_liver_data.csv",
+    )
 
 
 # ── Assessment (protected) ────────────────────────────────────────────────────
